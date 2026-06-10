@@ -1,0 +1,44 @@
+name: Unzip and Flatten NFT Images Direct
+
+on:
+  workflow_dispatch:
+
+jobs:
+  unzip-process:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Create Target Directory
+      run: mkdir -p images
+
+    - name: Extract and Flatten Images
+      run: |
+        for zip_file in part*.zip; do
+          if [ -f "$zip_file" ]; then
+            echo "Processing $zip_file ..."
+            
+            # Extract to a temporary folder
+            mkdir -p temp_extract
+            unzip -o "$zip_file" -d temp_extract/
+            
+            # Move all files from the inner folder to the main images directory
+            find temp_extract/ -type f -exec mv {} images/ \;
+            
+            # Clean up temporary folder for the next iteration
+            rm -rf temp_extract
+          fi
+        done
+
+    - name: Clean Up Zip Files
+      run: rm -rf part*.zip
+
+    - name: Commit and Push Extracted Images
+      run: |
+        git config --global user.name "glowriftape"
+        git config --global user.email "glowriftape@users.noreply.github.com"
+        git add images/
+        git commit -m "Extract and flatten all NFT images directly from root"
+        git push origin main
